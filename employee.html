@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Simple transition for smooth filtering and view switching */
+        .ticket-card, #create-ticket-view, #view-tickets-view, #password-modal {
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 antialiased">
+    <header class="bg-white shadow-sm sticky top-0 z-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-slate-800">HR Ticket Hub</h1>
+            <div class="flex items-center gap-2">
+                <div id="userInfo" class="text-right"></div>
+                <!-- Change Password Button -->
+                <button id="change-password-btn" class="py-2 px-4 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-100 border border-slate-300">Change Password</button>
+                <!-- Logout Button -->
+                <button id="logout-btn" class="py-2 px-4 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-100 border border-slate-300">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="mt-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            <!-- VIEW 1: MY TICKETS (Visible by default) -->
+            <div id="view-tickets-view">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
+                    <div>
+                        <h2 class="text-3xl font-bold text-slate-900">My Tickets</h2>
+                        <p class="text-slate-500 mt-1">Here is a list of all your submitted tickets.</p>
+                    </div>
+                    <button id="show-create-form-btn" class="w-full md:w-auto inline-flex items-center justify-center py-2 px-5 border border-transparent shadow-sm text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700">
+                        Create New Ticket
+                    </button>
+                </div>
+                <!-- Filter Buttons -->
+                <div id="filter-container" class="flex space-x-2 bg-slate-200 p-1 rounded-lg mb-6">
+                    <button data-status="All" class="filter-btn bg-white text-blue-600 font-semibold py-2 px-4 rounded-md shadow flex-grow text-center">All</button>
+                    <button data-status="Open" class="filter-btn text-slate-600 font-semibold py-2 px-4 rounded-md flex-grow text-center">Open</button>
+                    <button data-status="Assigned" class="filter-btn text-slate-600 font-semibold py-2 px-4 rounded-md flex-grow text-center">Assigned</button>
+                    <button data-status="Closed" class="filter-btn text-slate-600 font-semibold py-2 px-4 rounded-md flex-grow text-center">Closed</button>
+                </div>
+
+                <!-- Ticket Cards Container -->
+                <div id="tickets-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <p id="loading-spinner" class="col-span-full text-center text-slate-500 font-semibold py-10">Loading tickets...</p>
+                </div>
+            </div>
+
+            <!-- VIEW 2: CREATE TICKET FORM (Hidden by default) -->
+            <div id="create-ticket-view" style="display: none;">
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="p-8">
+                        <h2 class="text-3xl font-bold text-slate-900">Create a New Ticket</h2>
+                        <p class="text-slate-500 mt-1">Please fill out the details below to raise a ticket.</p>
+                        <form id="newTicketForm" class="space-y-6 mt-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label for="issue" class="block text-sm font-semibold text-slate-700 mb-2">Primary Issue</label>
+                                    <select id="issue" name="issue" required class="w-full border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 text-sm h-11 px-3">
+                                        <option value="" disabled selected>Select an issue category...</option>
+                                        <option value="Payroll">Payroll & Compensation</option>
+                                        <option value="Leave Request">Leave & Time Off</option>
+                                        <option value="IT Support">IT & Equipment Support</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="type" class="block text-sm font-semibold text-slate-700 mb-2">Request Type</label>
+                                    <select id="type" name="type" required class="w-full border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 text-sm h-11 px-3">
+                                        <option value="" disabled selected>Select a request type...</option>
+                                        <option value="Question">General Question</option>
+                                        <option value="Incident">Report an Incident</option>
+                                        <option value="Request">Make a Request</option>
+                                    </select>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label for="description" class="block text-sm font-semibold text-slate-700 mb-2">Detailed Description</label>
+                                    <textarea id="description" name="description" rows="4" required class="w-full border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 text-sm p-4"></textarea>
+                                </div>
+                                <div class="md:col-span-2 flex items-center">
+                                    <input id="confidential" name="confidential" type="checkbox" class="h-5 w-5 text-blue-600 focus:ring-blue-500 border-slate-300 rounded">
+                                    <label for="confidential" class="ml-3 text-sm font-semibold text-slate-800">Mark as Confidential</label>
+                                </div>
+                            </div>
+                            <div class="pt-4 flex justify-end items-center gap-4">
+                                <button type="button" id="cancel-creation-btn" class="py-2 px-5 text-base font-medium rounded-lg text-slate-600 hover:bg-slate-100">Cancel</button>
+                                <button type="submit" id="submitButton" class="inline-flex items-center justify-center py-2 px-5 border border-transparent shadow-sm text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700">Submit Ticket</button>
+                            </div>
+                            <p id="formMessage" class="text-center font-semibold"></p>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- CHANGE PASSWORD MODAL -->
+    <div id="password-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-30">
+        <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-2xl font-bold text-slate-800">Change Your Password</h3>
+                <button id="close-pw-modal-btn" class="text-2xl font-bold hover:text-red-500">&times;</button>
+            </div>
+            <form id="change-password-form" class="mt-5 space-y-4">
+                <div>
+                    <label for="old-password" class="font-semibold text-slate-700 block mb-1">Old Password</label>
+                    <input type="password" id="old-password" required class="w-full border-slate-300 rounded-lg shadow-sm h-11 px-3">
+                </div>
+                <div>
+                    <label for="new-password" class="font-semibold text-slate-700 block mb-1">New Password</label>
+                    <input type="password" id="new-password" required class="w-full border-slate-300 rounded-lg shadow-sm h-11 px-3">
+                </div>
+                <div>
+                    <label for="confirm-password" class="font-semibold text-slate-700 block mb-1">Confirm New Password</label>
+                    <input type="password" id="confirm-password" required class="w-full border-slate-300 rounded-lg shadow-sm h-11 px-3">
+                </div>
+                <div class="pt-4 flex justify-end">
+                    <button type="submit" id="pw-submit-btn" class="py-2 px-6 text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700">Update Password</button>
+                </div>
+                <p id="pw-form-message" class="text-center font-semibold"></p>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzgItPIGO4OU5yIUdcT5uJOrM5R8Sybp8qm_8x_Rg1uMXMjf5nziaKhYgD0XUvsIWg/exec'; // <-- IMPORTANT: PASTE YOUR URL HERE
+        const viewTicketsView = document.getElementById('view-tickets-view');
+        const createTicketView = document.getElementById('create-ticket-view');
+        const passwordModal = document.getElementById('password-modal');
+        let currentUser = null;
+
+        // --- VIEW MANAGEMENT ---
+        function showView(viewName) {
+            if (viewName === 'create') {
+                viewTicketsView.style.display = 'none';
+                createTicketView.style.display = 'block';
+            } else { // 'list' or default
+                createTicketView.style.display = 'none';
+                viewTicketsView.style.display = 'block';
+            }
+        }
+
+        // --- UTILITY FUNCTIONS ---
+        function getStatusBadge(status) {
+            const baseClasses = 'text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full';
+            switch (status) {
+                case 'Open': return `<span class="bg-blue-100 text-blue-800 ${baseClasses}">Open</span>`;
+                case 'Assigned': return `<span class="bg-yellow-100 text-yellow-800 ${baseClasses}">Assigned</span>`;
+                case 'In Progress': return `<span class="bg-purple-100 text-purple-800 ${baseClasses}">In Progress</span>`;
+                case 'Closed': return `<span class="bg-green-100 text-green-800 ${baseClasses}">Closed</span>`;
+                default: return `<span class="bg-gray-100 text-gray-800 ${baseClasses}">${status}</span>`;
+            }
+        }
+
+        // --- PAGE INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            currentUser = JSON.parse(sessionStorage.getItem('loggedInUser'));
+            if (!currentUser || currentUser.role !== 'EMP') {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            document.getElementById('userInfo').innerHTML = `<p class="font-semibold">${currentUser.fullName}</p><p class="text-sm text-slate-500">${currentUser.email}</p>`;
+            
+            fetchTickets(currentUser.userId);
+            setupEventListeners();
+        });
+
+        // --- DATA FETCHING ---
+        async function fetchTickets(userId) {
+            try {
+                document.getElementById('loading-spinner').style.display = 'block';
+                const response = await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'getTickets', userId }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
+                const result = await response.json();
+                
+                document.getElementById('loading-spinner').style.display = 'none';
+                if (result.status === 'success') {
+                    displayTickets(result.tickets);
+                } else {
+                    document.getElementById('tickets-container').innerHTML = `<p class="col-span-full text-center text-red-500">Error: ${result.message}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('loading-spinner').style.display = 'none';
+                document.getElementById('tickets-container').innerHTML = `<p class="col-span-full text-center text-red-500">A connection error occurred.</p>`;
+            }
+        }
+
+        // --- UI RENDERING ---
+        function displayTickets(tickets) {
+            const container = document.getElementById('tickets-container');
+            if (tickets.length === 0) {
+                container.innerHTML = `<p class="col-span-full text-center text-slate-500 font-semibold py-10">You haven't created any tickets yet.</p>`;
+                return;
+            }
+            container.innerHTML = tickets.map(ticket => `
+                <div class="ticket-card bg-white rounded-lg shadow-md p-5 border-l-4 border-blue-500" data-status="${ticket.Status}">
+                    <div class="flex justify-between items-start">
+                        <p class="font-bold text-lg text-slate-800">${ticket.Issue}</p>
+                        ${getStatusBadge(ticket.Status)}
+                    </div>
+                    <p class="text-sm text-slate-400 font-medium mb-3">${ticket.TicketID}</p>
+                    <p class="text-slate-600 text-sm mb-4">${ticket.Description.substring(0, 100)}${ticket.Description.length > 100 ? '...' : ''}</p>
+                    <div class="border-t border-slate-200 pt-3 flex justify-between text-xs text-slate-500">
+                        <span>Created: ${ticket.CreationDate}</span>
+                        <span>Assigned to: ${ticket.AssignedTo || 'N/A'}</span>
+                    </div>
+                </div>`).join('');
+        }
+        
+        // --- EVENT LISTENERS ---
+        function setupEventListeners() {
+            // Logout Button
+            document.getElementById('logout-btn').addEventListener('click', () => {
+                sessionStorage.removeItem('loggedInUser');
+                window.location.href = 'login.html';
+            });
+
+            // View Switching Buttons
+            document.getElementById('show-create-form-btn').addEventListener('click', () => showView('create'));
+            document.getElementById('cancel-creation-btn').addEventListener('click', () => showView('list'));
+
+            // New Ticket Form Submission
+            document.getElementById('newTicketForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const submitButton = document.getElementById('submitButton');
+                submitButton.disabled = true;
+                submitButton.textContent = 'Submitting...';
+                
+                const ticketData = { issue: document.getElementById('issue').value, type: document.getElementById('type').value, description: document.getElementById('description').value, isConfidential: document.getElementById('confidential').checked, createdBy: currentUser.userId, createdByName: currentUser.fullName };
+                
+                try {
+                    const response = await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'createTicket', ticketData }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        document.getElementById('newTicketForm').reset();
+                        fetchTickets(currentUser.userId);
+                        showView('list');
+                    } else { alert(`Error: ${result.message}`); }
+                } catch(error) { alert('A connection error occurred.'); } 
+                finally { submitButton.disabled = false; submitButton.textContent = 'Submit Ticket'; }
+            });
+
+            // Filter Button Clicks
+            document.getElementById('filter-container').addEventListener('click', (e) => {
+                if (e.target.classList.contains('filter-btn')) {
+                    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('bg-white', 'text-blue-600', 'shadow'));
+                    e.target.classList.add('bg-white', 'text-blue-600', 'shadow');
+                    const statusToFilter = e.target.getAttribute('data-status');
+                    document.querySelectorAll('.ticket-card').forEach(card => card.style.display = (statusToFilter === 'All' || card.getAttribute('data-status') === statusToFilter) ? 'block' : 'none');
+                }
+            });
+
+            // Change Password Modal Listeners
+            document.getElementById('change-password-btn').addEventListener('click', () => passwordModal.classList.remove('hidden'));
+            document.getElementById('close-pw-modal-btn').addEventListener('click', () => {
+                passwordModal.classList.add('hidden');
+                document.getElementById('change-password-form').reset();
+                document.getElementById('pw-form-message').textContent = '';
+            });
+
+            document.getElementById('change-password-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const msgEl = document.getElementById('pw-form-message');
+                const submitBtn = document.getElementById('pw-submit-btn');
+                const oldPassword = document.getElementById('old-password').value;
+                const newPassword = document.getElementById('new-password').value;
+                const confirmPassword = document.getElementById('confirm-password').value;
+
+                if (newPassword !== confirmPassword) {
+                    msgEl.textContent = 'New passwords do not match.';
+                    msgEl.className = 'text-center font-semibold text-red-600';
+                    return;
+                }
+                
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Updating...';
+                
+                try {
+                    const data = { userId: currentUser.userId, oldPassword, newPassword };
+                    const response = await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'changePassword', data }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
+                    const result = await response.json();
+
+                    if (result.status === 'success') {
+                        msgEl.textContent = result.message;
+                        msgEl.className = 'text-center font-semibold text-green-600';
+                        setTimeout(() => document.getElementById('close-pw-modal-btn').click(), 2000);
+                    } else {
+                        msgEl.textContent = result.message;
+                        msgEl.className = 'text-center font-semibold text-red-600';
+                    }
+                } catch (error) {
+                    msgEl.textContent = 'A connection error occurred.';
+                    msgEl.className = 'text-center font-semibold text-red-600';
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Update Password';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

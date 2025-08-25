@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 antialiased">
+    <header class="bg-white shadow-sm sticky top-0 z-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-slate-800">HR View</h1>
+            <div class="flex items-center gap-4">
+                <div id="userInfo" class="text-right"></div>
+                <button id="logout-btn" class="py-2 px-4 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-100 border border-slate-300">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="mt-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
+                <div>
+                    <h2 class="text-3xl font-bold text-slate-900">My Assigned Tickets</h2>
+                    <p class="text-slate-500 mt-1">These are the tickets that require your attention.</p>
+                </div>
+            </div>
+            <div id="filter-container" class="flex space-x-2 bg-slate-200 p-1 rounded-lg mb-6">
+                 <button data-status="All" class="filter-btn bg-white text-blue-600 font-semibold py-2 px-4 rounded-md shadow flex-grow text-center">All</button>
+                 <button data-status="Assigned" class="filter-btn text-slate-600 font-semibold py-2 px-4 rounded-md flex-grow text-center">Assigned</button>
+                 <button data-status="In Progress" class="filter-btn text-slate-600 font-semibold py-2 px-4 rounded-md flex-grow text-center">In Progress</button>
+                 <button data-status="Closed" class="filter-btn text-slate-600 font-semibold py-2 px-4 rounded-md flex-grow text-center">Closed</button>
+            </div>
+            <div id="tickets-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <p id="loading-spinner" class="col-span-full text-center text-slate-500 font-semibold py-10">Loading your tickets...</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Details Modal -->
+    <div id="ticket-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-30">
+        <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-2xl font-bold text-slate-800">Ticket Details</h3>
+                <button id="close-modal-btn" class="text-2xl font-bold hover:text-red-500">&times;</button>
+            </div>
+            <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm">
+                <div><strong class="text-slate-500">Ticket ID:</strong> <span id="modal-ticket-id" class="font-mono"></span></div>
+                <div><strong class="text-slate-500">Created By:</strong> <span id="modal-created-by"></span></div>
+                <div><strong class="text-slate-500">Created Date:</strong> <span id="modal-created-date"></span></div>
+                <div><strong class="text-slate-500">Last Updated:</strong> <span id="modal-last-updated"></span></div>
+                <div class="md:col-span-2"><strong class="text-slate-500">Issue:</strong> <span id="modal-issue" class="font-semibold text-slate-800"></span></div>
+                <div class="md:col-span-2"><strong class="text-slate-500">Description:</strong><p id="modal-description" class="mt-1 bg-slate-50 p-3 rounded-md"></p></div>
+                <div class="md:col-span-2"><strong class="text-slate-500">Remark History:</strong><pre id="modal-remarks" class="mt-1 text-xs bg-slate-50 p-3 rounded-md h-24 overflow-y-auto whitespace-pre-wrap"></pre></div>
+            </div>
+            
+            <hr class="my-5">
+            
+            <form id="update-ticket-form">
+                <input type="hidden" id="form-ticket-id">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="form-status" class="font-semibold text-slate-700 block mb-1">Change Status</label>
+                        <select id="form-status" class="w-full border-slate-300 rounded-lg shadow-sm h-11 px-3">
+                            <option>Assigned</option>
+                            <option>In Progress</option>
+                            <option>Closed</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="form-remark" class="font-semibold text-slate-700 block mb-1">Add New Remark</label>
+                        <textarea id="form-remark" rows="3" class="w-full border-slate-300 rounded-lg p-3" placeholder="Add a resolution note or update..."></textarea>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end">
+                    <button type="submit" id="form-submit-btn" class="py-2 px-6 text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700">Update Ticket</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzgItPIGO4OU5yIUdcT5uJOrM5R8Sybp8qm_8x_Rg1uMXMjf5nziaKhYgD0XUvsIWg/exec'; // <-- PASTE YOUR URL HERE
+        let allTicketsData = []; 
+        let currentUser = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            currentUser = JSON.parse(sessionStorage.getItem('loggedInUser'));
+            if (!currentUser || currentUser.role !== 'HR') {
+                window.location.href = 'login.html';
+                return;
+            }
+            document.getElementById('userInfo').innerHTML = `<p class="font-semibold">${currentUser.fullName}</p><p class="text-sm text-slate-500">${currentUser.email}</p>`;
+            fetchHrTickets(currentUser.userId);
+            setupEventListeners();
+        });
+
+        async function fetchHrTickets(hrUserId) {
+            document.getElementById('loading-spinner').style.display = 'block';
+            try {
+                const response = await fetch(WEB_APP_URL, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ action: 'getHrTickets', hrUserId }), 
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' } 
+                });
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    allTicketsData = result.tickets;
+                    displayTickets(allTicketsData);
+                } else {
+                    document.getElementById('tickets-container').innerHTML = `<p class="col-span-full text-center text-red-500">Error: ${result.message}</p>`;
+                }
+            } catch (error) {
+                 document.getElementById('tickets-container').innerHTML = `<p class="col-span-full text-center text-red-500">A connection error occurred.</p>`;
+            } finally {
+                document.getElementById('loading-spinner').style.display = 'none';
+            }
+        }
+
+        function displayTickets(tickets) {
+            const container = document.getElementById('tickets-container');
+            if (tickets.length === 0) {
+                container.innerHTML = `<p class="col-span-full text-center text-slate-500 font-semibold py-10">You have no tickets assigned to you.</p>`;
+                return;
+            }
+            container.innerHTML = tickets.map(ticket => `
+                <div class="ticket-card bg-white rounded-lg shadow-md p-5 border-l-4 ${ticket.Status === 'Closed' ? 'border-slate-400' : 'border-yellow-500'}" data-status="${ticket.Status}">
+                    <div class="flex justify-between items-start">
+                        <p class="font-bold text-lg text-slate-800">${ticket.Issue}</p>
+                        <!-- Status Badge (same as employee view) -->
+                    </div>
+                    <p class="text-sm text-slate-400 font-medium mb-3">${ticket.TicketID}</p>
+                    <p class="text-slate-600 text-sm"><strong>Created By:</strong> ${ticket.CreatedBy}</p>
+                    <p class="text-slate-600 text-sm mb-4"><strong>Status:</strong> ${ticket.Status || 'N/A'}</p>
+                    <div class="border-t border-slate-200 pt-3 text-right">
+                        <button class="details-btn text-blue-600 font-semibold text-sm hover:underline" data-ticket-id="${ticket.TicketID}">View Details</button>
+                    </div>
+                </div>`).join('');
+        }
+
+        function openTicketModal(ticket) {
+            document.getElementById('modal-ticket-id').textContent = ticket.TicketID;
+            document.getElementById('modal-created-by').textContent = ticket.CreatedBy;
+            document.getElementById('modal-created-date').textContent = ticket.CreationDate;
+            document.getElementById('modal-last-updated').textContent = ticket.LastModifiedDate;
+            document.getElementById('modal-issue').textContent = ticket.Issue;
+            document.getElementById('modal-description').textContent = ticket.Description;
+            document.getElementById('modal-remarks').textContent = ticket.Remarks || 'No remarks yet.';
+            
+            document.getElementById('form-ticket-id').value = ticket.TicketID;
+            document.getElementById('form-status').value = ticket.Status;
+
+            document.getElementById('ticket-modal').classList.remove('hidden');
+        }
+
+        function setupEventListeners() {
+            document.getElementById('logout-btn').addEventListener('click', () => { sessionStorage.removeItem('loggedInUser'); window.location.href = 'login.html'; });
+            document.getElementById('close-modal-btn').addEventListener('click', () => document.getElementById('ticket-modal').classList.add('hidden'));
+
+            document.getElementById('tickets-container').addEventListener('click', e => {
+                if (e.target.classList.contains('details-btn')) {
+                    const ticketId = e.target.dataset.ticketId;
+                    const ticket = allTicketsData.find(t => t.TicketID === ticketId);
+                    if (ticket) openTicketModal(ticket);
+                }
+            });
+
+            document.getElementById('update-ticket-form').addEventListener('submit', async e => {
+                e.preventDefault();
+                const submitBtn = document.getElementById('form-submit-btn');
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Updating...';
+
+                const updateData = {
+                    ticketId: document.getElementById('form-ticket-id').value,
+                    newStatus: document.getElementById('form-status').value,
+                    remark: document.getElementById('form-remark').value.trim(),
+                    hrName: currentUser.fullName
+                };
+
+                try {
+                    const response = await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'updateTicketByHr', updateData }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        document.getElementById('ticket-modal').classList.add('hidden');
+                        fetchHrTickets(currentUser.userId); // Refresh list
+                    } else {
+                        alert(`Error: ${result.message}`);
+                    }
+                } catch(error) {
+                    alert('A connection error occurred.');
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Update Ticket';
+                    document.getElementById('form-remark').value = ''; 
+                }
+            });
+            document.getElementById('filter-container').addEventListener('click', e => { if (e.target.classList.contains('filter-btn')) { document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('bg-white', 'shadow')); e.target.classList.add('bg-white', 'shadow'); const s = e.target.dataset.status; document.querySelectorAll('.ticket-card').forEach(c => c.style.display = (s === 'All' || c.dataset.status === s) ? 'block' : 'none'); } });
+        }
+    </script>
+</body>
+</html>
