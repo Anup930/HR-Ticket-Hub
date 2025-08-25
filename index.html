@@ -1,98 +1,112 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HR Ticket Hub - Login</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HR Ticket Hub - Login</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-100 flex items-center justify-center h-screen">
-    <div class="w-full max-w-md p-8 space-y-6 bg-white shadow-2xl rounded-xl">
-        <div>
-            <h1 class="text-3xl font-bold text-center text-slate-800">HR Ticket Hub</h1>
-            <p class="text-center text-slate-500 mt-2">Sign in to your account</p>
-        </div>
-        <form id="loginForm" class="space-y-6">
-            <div>
-                <label for="email" class="block text-sm font-semibold text-slate-700">Email Address</label>
-                <input id="email" name="email" type="email" autocomplete="email" required class="mt-2 block w-full px-4 h-11 border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-            </div>
-            <div>
-                <label for="password" class="block text-sm font-semibold text-slate-700">Password</label>
-                <input id="password" name="password" type="password" autocomplete="current-password" required class="mt-2 block w-full px-4 h-11 border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-            </div>
-            <div>
-                <button type="submit" id="loginButton" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    Sign In
-                </button>
-            </div>
-            <p id="errorMessage" class="text-center text-red-600 font-semibold"></p>
-        </form>
+<body class="h-screen flex bg-slate-100">
+
+  <!-- Left Side (Branding) -->
+  <div class="hidden lg:flex w-1/2 bg-gradient-to-br from-blue-600 to-blue-400 text-white flex-col justify-center items-center p-12">
+    <h1 class="text-5xl font-extrabold tracking-tight">HR Ticket Hub</h1>
+    <p class="mt-6 text-lg text-blue-100 max-w-md text-center">
+      Manage HR requests, tickets, and approvals with ease.  
+      Secure login to access your dashboard.
+    </p>
+  </div>
+
+  <!-- Right Side (Login Form) -->
+  <div class="flex-1 flex flex-col justify-center items-center relative">
+    
+    <!-- Top Right Button -->
+    <div class="absolute top-6 right-6">
+      <button onclick="window.location.href='ticket-hub.html'"
+        class="px-5 py-2 rounded-full bg-blue-600 text-white font-semibold shadow-lg hover:bg-blue-700 transition">
+        Go to IT Ticket Hub
+      </button>
     </div>
-    <script>
-        const loginForm = document.getElementById('loginForm');
-        const errorMessage = document.getElementById('errorMessage');
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzgItPIGO4OU5yIUdcT5uJOrM5R8Sybp8qm_8x_Rg1uMXMjf5nziaKhYgD0XUvsIWg/exec'; // <-- MAKE SURE YOUR URL IS STILL HERE
 
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            errorMessage.textContent = '';
-            const loginButton = document.getElementById('loginButton');
-            loginButton.disabled = true;
-            loginButton.textContent = 'Signing In...';
+    <!-- Login Card -->
+    <div class="w-full max-w-md bg-white/90 shadow-2xl rounded-2xl border border-slate-200 p-10">
+      <div class="mb-8 text-center">
+        <h2 class="text-3xl font-bold text-slate-800">Welcome Back 👋</h2>
+        <p class="mt-2 text-slate-500">Sign in to continue</p>
+      </div>
 
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
+      <form id="loginForm" class="space-y-6">
+        <div>
+          <label for="email" class="block text-sm font-semibold text-slate-700">Email Address</label>
+          <input id="email" name="email" type="email" required
+            class="mt-2 w-full px-4 h-11 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"/>
+        </div>
 
-            try {
-                const response = await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'login', email, password }),
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                });
-                
-                const result = await response.json();
+        <div>
+          <label for="password" class="block text-sm font-semibold text-slate-700">Password</label>
+          <input id="password" name="password" type="password" required
+            class="mt-2 w-full px-4 h-11 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"/>
+        </div>
 
-                if (result.status === 'success') {
-                    // --- THIS IS THE NEW REDIRECTION LOGIC ---
+        <button type="submit" id="loginButton"
+          class="w-full py-3 px-4 rounded-lg bg-blue-600 text-white font-semibold shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
+          Sign In
+        </button>
 
-                    // 1. Store user info in the browser's session storage
-                    // (sessionStorage is cleared when the browser tab is closed)
-                    sessionStorage.setItem('loggedInUser', JSON.stringify(result.user));
-                    
-                    // 2. Redirect the user based on their role
-                    const userRole = result.user.role;
-                    switch (userRole) {
-                        case 'EMP':
-                            window.location.href = 'employee.html';
-                            break;
-                        case 'Admin':
-                            // You will create this file next
-                            window.location.href = 'admin.html';
-                            break;
-                        case 'HR':
-                            // You will create this file next
-                            window.location.href = 'hr.html';
-                            break;
-                        case 'Super Admin':
-                             // You will create this file next
-                            window.location.href = 'superadmin.html';
-                            break;
-                        default:
-                            errorMessage.textContent = 'Unknown user role. Cannot redirect.';
-                    }
+        <p id="errorMessage" class="text-center text-red-600 font-semibold mt-3"></p>
+      </form>
 
-                } else {
-                    errorMessage.textContent = result.message;
-                }
-            } catch (error) {
-                errorMessage.textContent = 'An error occurred. Please try again.';
-            } finally {
-                 loginButton.disabled = false;
-                 loginButton.textContent = 'Sign In';
-            }
+      <div class="mt-6 text-center text-sm">
+        <a href="#" class="text-blue-600 hover:underline">Forgot Password?</a> ·
+        <a href="#" class="text-blue-600 hover:underline">Create Account</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const loginForm = document.getElementById('loginForm');
+    const errorMessage = document.getElementById('errorMessage');
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzgItPIGO4OU5yIUdcT5uJOrM5R8Sybp8qm_8x_Rg1uMXMjf5nziaKhYgD0XUvsIWg/exec'; 
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorMessage.textContent = '';
+      const loginButton = document.getElementById('loginButton');
+      loginButton.disabled = true;
+      loginButton.textContent = 'Signing In...';
+
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const response = await fetch(WEB_APP_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'login', email, password }),
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         });
-    </script>
-</body>
 
+        const result = await response.json();
+
+        if (result.status === 'success') {
+          sessionStorage.setItem('loggedInUser', JSON.stringify(result.user));
+          const userRole = result.user.role;
+          switch (userRole) {
+            case 'EMP': window.location.href = 'employee.html'; break;
+            case 'Admin': window.location.href = 'admin.html'; break;
+            case 'HR': window.location.href = 'hr.html'; break;
+            case 'Super Admin': window.location.href = 'superadmin.html'; break;
+            default: errorMessage.textContent = 'Unknown user role. Cannot redirect.';
+          }
+        } else {
+          errorMessage.textContent = result.message;
+        }
+      } catch (error) {
+        errorMessage.textContent = 'An error occurred. Please try again.';
+      } finally {
+        loginButton.disabled = false;
+        loginButton.textContent = 'Sign In';
+      }
+    });
+  </script>
+</body>
 </html>
