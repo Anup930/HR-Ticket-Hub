@@ -1,111 +1,169 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>HR Ticket Hub - Login</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="utf-8" />
+  <base target="_top">
+  <title>Gretex One - Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Use link instead of @import (more reliable and less likely to be blocked) -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* temporary test color: if you see a lightgreen background the CSS is applied */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #f0f4f8; /* change to lightgreen to test quickly */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      color: #333;
+    }
+    #main-content { width: 100%; }
+    #login-container {
+      display: flex;
+      width: 900px;
+      max-width: 90%;
+      margin: 20px;
+      background: #ffffff;
+      border-radius: 20px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    .login-panel-left {
+      flex-basis: 40%;
+      background: linear-gradient(135deg, #3b439c, #4a5a9b);
+      color: white;
+      padding: 60px 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      text-align: center;
+    }
+    .login-panel-left h1 { font-size: 2.5rem; font-weight: 700; margin-bottom: 15px; }
+    .login-panel-left p { font-size: 1rem; color: rgba(255, 255, 255, 0.8); line-height: 1.6; }
+    .login-panel-right {
+      flex-basis: 60%;
+      padding: 60px 50px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .login-panel-right h2 { font-size: 2rem; font-weight: 600; color: #333; margin-bottom: 10px; }
+    .login-panel-right h2 span { font-size: 1.5rem; }
+    .login-panel-right p { color: #777; margin-bottom: 30px; font-size: 1rem; }
+    #login-form label { font-size: 0.9rem; font-weight: 500; color: #555; margin-bottom: 8px; display: block; }
+    #login-form input[type="text"],
+    #login-form input[type="password"] {
+      width: 100%;
+      padding: 14px 18px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-family: 'Poppins', sans-serif;
+      margin-bottom: 20px;
+      transition: border-color 0.3s;
+    }
+    #login-form input:focus { outline: none; border-color: #4a5a9b; }
+    #login-button {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 10px;
+      background: #4a5a9b;
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    #login-button:hover { background: #3b439c; }
+    #login-button:disabled { background: #ccc; cursor: not-allowed; }
+    .forgot-password { display: block; text-align: center; margin-top: 20px; color: #777; text-decoration: none; font-size: 0.9rem; }
+    .forgot-password:hover { text-decoration: underline; }
+    #message { text-align: center; margin-top: 15px; font-size: 0.9rem; }
+    .loading-message { color: #555; }
+    .error-message { color: #d93025; font-weight: 500; }
+    .hidden { display: none; }
+  </style>
 </head>
-<body class="h-screen flex bg-slate-100">
 
-  <!-- Left Side (Branding) -->
-  <div class="hidden lg:flex w-1/2 bg-gradient-to-br from-blue-600 to-blue-400 text-white flex-col justify-center items-center p-12">
-    <h1 class="text-5xl font-extrabold tracking-tight">HR Ticket Hub</h1>
-    <p class="mt-6 text-lg text-blue-100 max-w-md text-center">
-      Manage HR requests, tickets, and approvals with ease.  
-      Secure login to access your dashboard.
-    </p>
-  </div>
-
-  <!-- Right Side (Login Form) -->
-  <div class="flex-1 flex flex-col justify-center items-center relative">
-    
-    <!-- Top Right Button -->
-    <div class="absolute top-6 right-6">
-      <button onclick="window.location.href='ticket-hub.html'"
-        class="px-5 py-2 rounded-full bg-blue-600 text-white font-semibold shadow-lg hover:bg-blue-700 transition">
-        Go to IT Ticket Hub
-      </button>
-    </div>
-
-    <!-- Login Card -->
-    <div class="w-full max-w-md bg-white/90 shadow-2xl rounded-2xl border border-slate-200 p-10">
-      <div class="mb-8 text-center">
-        <h2 class="text-3xl font-bold text-slate-800">Welcome Back 👋</h2>
-        <p class="mt-2 text-slate-500">Sign in to continue</p>
+<body>
+  <div id="main-content">
+    <div id="login-container">
+      <div class="login-panel-left">
+        <h1>Gretex One</h1>
+        <p>A secure space to manage all your applications and tasks effortlessly. Sign in to access your personalized dashboard.</p>
       </div>
-
-      <form id="loginForm" class="space-y-6">
-        <div>
-          <label for="email" class="block text-sm font-semibold text-slate-700">Email Address</label>
-          <input id="email" name="email" type="email" required
-            class="mt-2 w-full px-4 h-11 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"/>
-        </div>
-
-        <div>
-          <label for="password" class="block text-sm font-semibold text-slate-700">Password</label>
-          <input id="password" name="password" type="password" required
-            class="mt-2 w-full px-4 h-11 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"/>
-        </div>
-
-        <button type="submit" id="loginButton"
-          class="w-full py-3 px-4 rounded-lg bg-blue-600 text-white font-semibold shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
-          Sign In
-        </button>
-
-        <p id="errorMessage" class="text-center text-red-600 font-semibold mt-3"></p>
-      </form>
-
-      <div class="mt-6 text-center text-sm">
-        <a href="#" class="text-blue-600 hover:underline">Forgot Password?</a> ·
-        <a href="#" class="text-blue-600 hover:underline">Create Account</a>
+      <div class="login-panel-right">
+        <h2>Welcome Back <span>👋</span></h2>
+        <p>Please sign in to your account.</p>
+        <form id="login-form">
+          <label for="userid">User ID</label>
+          <input type="text" id="userid" name="userid" required>
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required>
+          <div id="message"></div>
+          <button type="submit" id="login-button">Sign In</button>
+          <a href="#" class="forgot-password">Forgot Password?</a>
+        </form>
       </div>
     </div>
   </div>
 
   <script>
-    const loginForm = document.getElementById('loginForm');
-    const errorMessage = document.getElementById('errorMessage');
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzgItPIGO4OU5yIUdcT5uJOrM5R8Sybp8qm_8x_Rg1uMXMjf5nziaKhYgD0XUvsIWg/exec'; 
+    const SCRIPT_URL = "PASTE_YOUR_NEW_WEB_APP_URL_HERE";
 
-    loginForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      errorMessage.textContent = '';
-      const loginButton = document.getElementById('loginButton');
-      loginButton.disabled = true;
-      loginButton.textContent = 'Signing In...';
+    document.addEventListener("DOMContentLoaded", function() {
+      const loginForm = document.getElementById("login-form");
 
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-
-      try {
-        const response = await fetch(WEB_APP_URL, {
-          method: 'POST',
-          body: JSON.stringify({ action: 'login', email, password }),
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        });
-
-        const result = await response.json();
-
-        if (result.status === 'success') {
-          sessionStorage.setItem('loggedInUser', JSON.stringify(result.user));
-          const userRole = result.user.role;
-          switch (userRole) {
-            case 'EMP': window.location.href = 'employee.html'; break;
-            case 'Admin': window.location.href = 'admin.html'; break;
-            case 'HR': window.location.href = 'hr.html'; break;
-            case 'Super Admin': window.location.href = 'superadmin.html'; break;
-            default: errorMessage.textContent = 'Unknown user role. Cannot redirect.';
-          }
-        } else {
-          errorMessage.textContent = result.message;
-        }
-      } catch (error) {
-        errorMessage.textContent = 'An error occurred. Please try again.';
-      } finally {
-        loginButton.disabled = false;
-        loginButton.textContent = 'Sign In';
+      if (sessionStorage.getItem("gretexUser")) {
+        window.location.href = "App_access.html";
       }
+
+      loginForm.addEventListener("submit", function(e) {
+        e.preventDefault();
+
+        const loginButton = document.getElementById("login-button");
+        const messageDiv = document.getElementById("message");
+
+        messageDiv.innerHTML = "Signing in...";
+        messageDiv.className = "loading-message";
+        loginButton.disabled = true;
+
+        const credentials = {
+          userId: document.getElementById("userid").value,
+          password: document.getElementById("password").value
+        };
+
+        const requestData = {
+          action: "userLogin",
+          params: credentials
+        };
+
+        fetch(SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(requestData)
+        })
+        .then(res => res.json())
+        .then(response => {
+          if (response.status === "success") {
+            sessionStorage.setItem("gretexUser", JSON.stringify(response.data));
+            window.location.href = "App_access.html";
+          } else {
+            messageDiv.innerHTML = response.data.message;
+            messageDiv.className = "error-message";
+            loginButton.disabled = false;
+          }
+        })
+        .catch(error => {
+          console.error("Fetch Error:", error);
+          messageDiv.innerHTML = "Error: " + error.message;
+          messageDiv.className = "error-message";
+          loginButton.disabled = false;
+        });
+      });
     });
   </script>
 </body>
